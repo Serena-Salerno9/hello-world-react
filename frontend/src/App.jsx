@@ -26,7 +26,7 @@ export default function App() {
   return (
     <div style={{fontFamily: 'sans-serif', padding: '2rem'}}>
       <h1>Hello World React</h1>
-      <button onClick={fetchMessage} disabled={loading} style={{padding: '0.5rem 1rem'}}>
+      <button onClick={fetchMessage} disabled={loading} style={{padding: '0.5rem 1rem', color: 'white', backgroundColor: '#007BFF', border: 'none', borderRadius: '4px', cursor: 'pointer'}}>
         {loading ? 'Loading...' : 'Get Message From Backend'}
       </button>
       {message && <p style={{marginTop: '1rem'}}>Backend: {message}</p>}
