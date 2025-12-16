@@ -1,85 +1,98 @@
 steps:
-  # Build backend image (from server context)
-  - name: "gcr.io/cloud-builders/docker"
+  # 1. Controlla se ci sono modifiche nella cartella server (back-end)
+  - name: "gcr.io/cloud-builders/git"
+    id: "Check for BE changes"
+    entrypoint: "bash"
     args:
-      [
-        "build",
-        "-f",
-        "server/Dockerfile",
-        "-t",
-        "gcr.io/$PROJECT_ID/hello-backend",
-        "./server",
-      ]
+      - "-c"
+      - |
+        if git diff --name-only $COMMIT_SHA^ $COMMIT_SHA | grep -q "^server/"; then
+          echo "Changes detected in back-end, triggering BE build."
+          echo "true" > /workspace/build_backend
+        else
+          echo "No changes in back-end, skipping BE build."
+          echo "false" > /workspace/build_backend
+        fi
 
-  - name: "gcr.io/cloud-builders/docker"
-    args: ["push", "gcr.io/$PROJECT_ID/hello-backend"]
-
-  # Build frontend image (from frontend context). Pass VITE_API_URL via build-arg if provided.
-  - name: "gcr.io/cloud-builders/docker"
+  # 2. Controlla se ci sono modifiche nella cartella frontend
+  - name: "gcr.io/cloud-builders/git"
+    id: "Check for FE changes"
+    entrypoint: "bash"
     args:
-      [
-        "build",
-        "-f",
-        "frontend/Dockerfile",
-        "--build-arg",
-        "VITE_API_URL=$_VITE_API_URL",
-        "-t",
-        "gcr.io/$PROJECT_ID/hello-frontend",
-        "./frontend",
-      ]
+      - "-c"
+      - |
+        if git diff --name-only $COMMIT_SHA^ $COMMIT_SHA | grep -q "^frontend/"; then
+          echo "Changes detected in frontend, triggering FE build."
+          echo "true" > /workspace/build_frontend
+        else
+          echo "No changes in frontend, skipping FE build."
+          echo "false" > /workspace/build_frontend
+        fi
 
+  # 3. Build and deploy BE (back-end)
   - name: "gcr.io/cloud-builders/docker"
-    args: ["push", "gcr.io/$PROJECT_ID/hello-frontend"]
-
-  # Build combined image (root Dockerfile builds frontend then packages backend + nginx)
-  # Pass VITE_API_URL to the frontend build stage inside the combined Dockerfile as well.
-  - name: "gcr.io/cloud-builders/docker"
+    id: "Build BE Docker image"
+    if: "substitute('$(cat /workspace/build_backend)', 'true', 'true', 'false', 'false') == 'true'"
     args:
-      [
-        "build",
-        "--build-arg",
-        "VITE_API_URL=$_VITE_API_URL",
-        "-t",
-        "gcr.io/$PROJECT_ID/hello-app",
-        ".",
-      ]
+      - "build"
+      - "-t"
+      - "europe-west1-docker.pkg.dev/test-sere/test-repo/hello-backend:$COMMIT_SHA" # Nominare hello-backend
+      - "server/" # Cartella del back-end
 
   - name: "gcr.io/cloud-builders/docker"
-    args: ["push", "gcr.io/$PROJECT_ID/hello-app"]
+    id: "Push BE Docker image to Artifact Registry"
+    if: "substitute('$(cat /workspace/build_backend)', 'true', 'true', 'false', 'false') == 'true'"
+    args:
+      - "push"
+      - "europe-west1-docker.pkg.dev/test-sere/test-repo/hello-backend:$COMMIT_SHA" # Nominare hello-backend
 
-  # Optional: deploy backend-only to Cloud Run
   - name: "gcr.io/cloud-builders/gcloud"
+    id: "Deploy BE to Cloud Run"
+    if: "substitute('$(cat /workspace/build_backend)', 'true', 'true', 'false', 'false') == 'true'"
     args:
       - "run"
       - "deploy"
-      - "hello-backend"
+      - "hello-backend" # Nominare hello-backend su Cloud Run
       - "--image"
-      - "gcr.io/$PROJECT_ID/hello-backend"
+      - "europe-west1-docker.pkg.dev/test-sere/test-repo/hello-backend:$COMMIT_SHA"
       - "--region"
-      - "$REGION"
+      - "europe-west1"
       - "--platform"
       - "managed"
       - "--allow-unauthenticated"
 
-  # Optional: deploy combined app (nginx + backend) to Cloud Run
+  # 4. Build and deploy FE (front-end)
+  - name: "gcr.io/cloud-builders/docker"
+    id: "Build FE Docker image"
+    if: "substitute('$(cat /workspace/build_frontend)', 'true', 'true', 'false', 'false') == 'true'"
+    args:
+      - "build"
+      - "-t"
+      - "europe-west1-docker.pkg.dev/test-sere/test-repo/hello-frontend:$COMMIT_SHA" # Nominare hello-frontend
+      - "frontend/" # Cartella del front-end
+
+  - name: "gcr.io/cloud-builders/docker"
+    id: "Push FE Docker image to Artifact Registry"
+    if: "substitute('$(cat /workspace/build_frontend)', 'true', 'true', 'false', 'false') == 'true'"
+    args:
+      - "push"
+      - "europe-west1-docker.pkg.dev/test-sere/test-repo/hello-frontend:$COMMIT_SHA" # Nominare hello-frontend
+
   - name: "gcr.io/cloud-builders/gcloud"
+    id: "Deploy FE to Cloud Run"
+    if: "substitute('$(cat /workspace/build_frontend)', 'true', 'true', 'false', 'false') == 'true'"
     args:
       - "run"
       - "deploy"
-      - "hello-app"
+      - "hello-frontend" # Nominare hello-frontend su Cloud Run
       - "--image"
-      - "gcr.io/$PROJECT_ID/hello-app"
+      - "europe-west1-docker.pkg.dev/test-sere/test-repo/hello-frontend:$COMMIT_SHA"
       - "--region"
-      - "$REGION"
+      - "europe-west1"
       - "--platform"
       - "managed"
       - "--allow-unauthenticated"
 
 images:
-  - "gcr.io/$PROJECT_ID/hello-backend"
-  - "gcr.io/$PROJECT_ID/hello-frontend"
-  - "gcr.io/$PROJECT_ID/hello-app"
-
-substitutions:
-  _REGION: "us-central1"
-  _VITE_API_URL: ""
+  - "europe-west1-docker.pkg.dev/test-sere/test-repo/hello-backend:$COMMIT_SHA"
+  - "europe-west1-docker.pkg.dev/test-sere/test-repo/hello-frontend:$COMMIT_SHA"
