@@ -1,0 +1,85 @@
+steps:
+  # Build backend image (from server context)
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      [
+        "build",
+        "-f",
+        "server/Dockerfile",
+        "-t",
+        "gcr.io/$PROJECT_ID/hello-backend",
+        "./server",
+      ]
+
+  - name: "gcr.io/cloud-builders/docker"
+    args: ["push", "gcr.io/$PROJECT_ID/hello-backend"]
+
+  # Build frontend image (from frontend context). Pass VITE_API_URL via build-arg if provided.
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      [
+        "build",
+        "-f",
+        "frontend/Dockerfile",
+        "--build-arg",
+        "VITE_API_URL=$_VITE_API_URL",
+        "-t",
+        "gcr.io/$PROJECT_ID/hello-frontend",
+        "./frontend",
+      ]
+
+  - name: "gcr.io/cloud-builders/docker"
+    args: ["push", "gcr.io/$PROJECT_ID/hello-frontend"]
+
+  # Build combined image (root Dockerfile builds frontend then packages backend + nginx)
+  # Pass VITE_API_URL to the frontend build stage inside the combined Dockerfile as well.
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      [
+        "build",
+        "--build-arg",
+        "VITE_API_URL=$_VITE_API_URL",
+        "-t",
+        "gcr.io/$PROJECT_ID/hello-app",
+        ".",
+      ]
+
+  - name: "gcr.io/cloud-builders/docker"
+    args: ["push", "gcr.io/$PROJECT_ID/hello-app"]
+
+  # Optional: deploy backend-only to Cloud Run
+  - name: "gcr.io/cloud-builders/gcloud"
+    args:
+      - "run"
+      - "deploy"
+      - "hello-backend"
+      - "--image"
+      - "gcr.io/$PROJECT_ID/hello-backend"
+      - "--region"
+      - "$REGION"
+      - "--platform"
+      - "managed"
+      - "--allow-unauthenticated"
+
+  # Optional: deploy combined app (nginx + backend) to Cloud Run
+  - name: "gcr.io/cloud-builders/gcloud"
+    args:
+      - "run"
+      - "deploy"
+      - "hello-app"
+      - "--image"
+      - "gcr.io/$PROJECT_ID/hello-app"
+      - "--region"
+      - "$REGION"
+      - "--platform"
+      - "managed"
+      - "--allow-unauthenticated"
+
+images:
+  - "gcr.io/$PROJECT_ID/hello-backend"
+  - "gcr.io/$PROJECT_ID/hello-frontend"
+  - "gcr.io/$PROJECT_ID/hello-app"
+
+substitutions:
+  _REGION: "us-central1"
+  _VITE_API_URL: ""
