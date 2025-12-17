@@ -2,7 +2,7 @@ options:
   logging: CLOUD_LOGGING_ONLY
 
 steps:
-  # Build dell'immagine
+  # 1. Build dell'immagine
   - name: "gcr.io/cloud-builders/docker"
     id: "Build BE Image"
     args:
@@ -13,7 +13,7 @@ steps:
         "server/",
       ]
 
-  # Push dell'immagine
+  # 2. Push dell'immagine
   - name: "gcr.io/cloud-builders/docker"
     id: "Push BE Image"
     args:
@@ -22,7 +22,7 @@ steps:
         "europe-west1-docker.pkg.dev/test-sere/test-repo/hello-backend:$SHORT_SHA",
       ]
 
-  # Deploy su Cloud Run
+  # 3. Deploy su Cloud Run
   - name: "gcr.io/cloud-builders/gcloud"
     id: "Deploy BE"
     args:
@@ -39,10 +39,7 @@ steps:
         "--allow-unauthenticated",
       ]
 
-      - name: 'gcr.io/cloud-builders/gcloud'
+  # 4. Trigger FE Build (Allineato correttamente)
+  - name: "gcr.io/cloud-builders/gcloud"
     id: "Trigger FE Build"
-    args: [
-      "beta", "builds", "triggers", "run", 
-      "fe-trigger", 
-      "--branch=main"
-    ]
+    args: ["beta", "builds", "triggers", "run", "fe-trigger", "--branch=main"]
