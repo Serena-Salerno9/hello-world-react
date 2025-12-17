@@ -2,11 +2,14 @@ options:
   logging: CLOUD_LOGGING_ONLY
 
 steps:
+  # Build dell'immagine passandogli l'URL del Backend
   - name: "gcr.io/cloud-builders/docker"
     id: "Build FE Image"
     args:
       [
         "build",
+        "--build-arg",
+        "VITE_API_URL=https://hello-backend-746457634204.europe-west1.run.app",
         "-t",
         "europe-west1-docker.pkg.dev/test-sere/test-repo/hello-frontend:$SHORT_SHA",
         "frontend/",

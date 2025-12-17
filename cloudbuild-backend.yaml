@@ -38,3 +38,11 @@ steps:
         "managed",
         "--allow-unauthenticated",
       ]
+
+      - name: 'gcr.io/cloud-builders/gcloud'
+    id: "Trigger FE Build"
+    args: [
+      "beta", "builds", "triggers", "run", 
+      "fe-trigger", 
+      "--branch=main"
+    ]
