@@ -1,3 +1,7 @@
+options:
+  logging: CLOUD_LOGGING_ONLY
+  logs_bucket: gs://cloudbuild-test-sere-123456/
+
 steps:
   # 1. Controlla se ci sono modifiche nella cartella server (back-end)
   - name: "gcr.io/cloud-builders/git"
