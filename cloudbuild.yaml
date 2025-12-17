@@ -125,7 +125,3 @@ steps:
         else
           echo "Skipping Front-End deployment."
         fi
-
-images:
-  - "europe-west1-docker.pkg.dev/test-sere/test-repo/hello-backend:$SHORT_SHA"
-  - "europe-west1-docker.pkg.dev/test-sere/test-repo/hello-frontend:$SHORT_SHA"
