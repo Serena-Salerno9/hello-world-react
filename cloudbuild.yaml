@@ -9,7 +9,10 @@ steps:
     args:
       - "-c"
       - |
-        if git diff --name-only $COMMIT_SHA^ $COMMIT_SHA | grep -q "^server/"; then
+        # Fetch latest changes from origin
+        git fetch origin
+        # Controlla le modifiche nella cartella 'server'
+        if git diff --name-only origin/main~1..origin/main | grep -q "^server/"; then
           echo "Changes detected in back-end, triggering BE build."
           echo "true" > /workspace/build_backend
         else
@@ -24,7 +27,10 @@ steps:
     args:
       - "-c"
       - |
-        if git diff --name-only $COMMIT_SHA^ $COMMIT_SHA | grep -q "^frontend/"; then
+        # Fetch latest changes from origin
+        git fetch origin
+        # Controlla le modifiche nella cartella 'frontend'
+        if git diff --name-only origin/main~1..origin/main | grep -q "^frontend/"; then
           echo "Changes detected in frontend, triggering FE build."
           echo "true" > /workspace/build_frontend
         else
@@ -41,7 +47,7 @@ steps:
       - |
         if [[ $(cat /workspace/build_backend) == "true" ]]; then
           echo "Building Back-End Docker image..."
-          docker build -t europe-west1-docker.pkg.dev/test-sere/test-repo/hello-backend:$COMMIT_SHA server/
+          docker build -t europe-west1-docker.pkg.dev/test-sere/test-repo/hello-backend:$SHORT_SHA server/
         else
           echo "Skipping Back-End build as no changes detected."
         fi
@@ -54,7 +60,7 @@ steps:
       - |
         if [[ $(cat /workspace/build_backend) == "true" ]]; then
           echo "Pushing Back-End Docker image to Artifact Registry..."
-          docker push europe-west1-docker.pkg.dev/test-sere/test-repo/hello-backend:$COMMIT_SHA
+          docker push europe-west1-docker.pkg.dev/test-sere/test-repo/hello-backend:$SHORT_SHA
         else
           echo "Skipping Back-End image push."
         fi
@@ -67,7 +73,7 @@ steps:
       - |
         if [[ $(cat /workspace/build_backend) == "true" ]]; then
           echo "Deploying Back-End to Cloud Run..."
-          gcloud run deploy hello-backend --image europe-west1-docker.pkg.dev/test-sere/test-repo/hello-backend:$COMMIT_SHA --region europe-west1 --platform managed --allow-unauthenticated
+          gcloud run deploy hello-backend --image europe-west1-docker.pkg.dev/test-sere/test-repo/hello-backend:$SHORT_SHA --region europe-west1 --platform managed --allow-unauthenticated
         else
           echo "Skipping Back-End deployment."
         fi
@@ -81,7 +87,7 @@ steps:
       - |
         if [[ $(cat /workspace/build_frontend) == "true" ]]; then
           echo "Building Front-End Docker image..."
-          docker build -t europe-west1-docker.pkg.dev/test-sere/test-repo/hello-frontend:$COMMIT_SHA frontend/
+          docker build -t europe-west1-docker.pkg.dev/test-sere/test-repo/hello-frontend:$SHORT_SHA frontend/
         else
           echo "Skipping Front-End build as no changes detected."
         fi
@@ -94,7 +100,7 @@ steps:
       - |
         if [[ $(cat /workspace/build_frontend) == "true" ]]; then
           echo "Pushing Front-End Docker image to Artifact Registry..."
-          docker push europe-west1-docker.pkg.dev/test-sere/test-repo/hello-frontend:$COMMIT_SHA
+          docker push europe-west1-docker.pkg.dev/test-sere/test-repo/hello-frontend:$SHORT_SHA
         else
           echo "Skipping Front-End image push."
         fi
@@ -107,11 +113,11 @@ steps:
       - |
         if [[ $(cat /workspace/build_frontend) == "true" ]]; then
           echo "Deploying Front-End to Cloud Run..."
-          gcloud run deploy hello-frontend --image europe-west1-docker.pkg.dev/test-sere/test-repo/hello-frontend:$COMMIT_SHA --region europe-west1 --platform managed --allow-unauthenticated
+          gcloud run deploy hello-frontend --image europe-west1-docker.pkg.dev/test-sere/test-repo/hello-frontend:$SHORT_SHA --region europe-west1 --platform managed --allow-unauthenticated
         else
           echo "Skipping Front-End deployment."
         fi
 
 images:
-  - "europe-west1-docker.pkg.dev/test-sere/test-repo/hello-backend:$COMMIT_SHA"
-  - "europe-west1-docker.pkg.dev/test-sere/test-repo/hello-frontend:$COMMIT_SHA"
+  - "europe-west1-docker.pkg.dev/test-sere/test-repo/hello-backend:$SHORT_SHA"
+  - "europe-west1-docker.pkg.dev/test-sere/test-repo/hello-frontend:$SHORT_SHA"
