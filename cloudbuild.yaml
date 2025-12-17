@@ -32,66 +32,82 @@ steps:
   # 3. Build and deploy BE (back-end)
   - name: "gcr.io/cloud-builders/docker"
     id: "Build BE Docker image"
-    if: "substitute('$(cat /workspace/build_backend)', 'true', 'true', 'false', 'false') == 'true'"
+    entrypoint: "bash"
     args:
-      - "build"
-      - "-t"
-      - "europe-west1-docker.pkg.dev/test-sere/test-repo/hello-backend:$COMMIT_SHA" # Nominare hello-backend
-      - "server/" # Cartella del back-end
+      - "-c"
+      - |
+        if [[ $(cat /workspace/build_backend) == "true" ]]; then
+          echo "Building Back-End Docker image..."
+          docker build -t europe-west1-docker.pkg.dev/test-sere/test-repo/hello-backend:$COMMIT_SHA server/
+        else
+          echo "Skipping Back-End build as no changes detected."
+        fi
 
   - name: "gcr.io/cloud-builders/docker"
     id: "Push BE Docker image to Artifact Registry"
-    if: "substitute('$(cat /workspace/build_backend)', 'true', 'true', 'false', 'false') == 'true'"
+    entrypoint: "bash"
     args:
-      - "push"
-      - "europe-west1-docker.pkg.dev/test-sere/test-repo/hello-backend:$COMMIT_SHA" # Nominare hello-backend
+      - "-c"
+      - |
+        if [[ $(cat /workspace/build_backend) == "true" ]]; then
+          echo "Pushing Back-End Docker image to Artifact Registry..."
+          docker push europe-west1-docker.pkg.dev/test-sere/test-repo/hello-backend:$COMMIT_SHA
+        else
+          echo "Skipping Back-End image push."
+        fi
 
   - name: "gcr.io/cloud-builders/gcloud"
     id: "Deploy BE to Cloud Run"
-    if: "substitute('$(cat /workspace/build_backend)', 'true', 'true', 'false', 'false') == 'true'"
+    entrypoint: "bash"
     args:
-      - "run"
-      - "deploy"
-      - "hello-backend" # Nominare hello-backend su Cloud Run
-      - "--image"
-      - "europe-west1-docker.pkg.dev/test-sere/test-repo/hello-backend:$COMMIT_SHA"
-      - "--region"
-      - "europe-west1"
-      - "--platform"
-      - "managed"
-      - "--allow-unauthenticated"
+      - "-c"
+      - |
+        if [[ $(cat /workspace/build_backend) == "true" ]]; then
+          echo "Deploying Back-End to Cloud Run..."
+          gcloud run deploy hello-backend --image europe-west1-docker.pkg.dev/test-sere/test-repo/hello-backend:$COMMIT_SHA --region europe-west1 --platform managed --allow-unauthenticated
+        else
+          echo "Skipping Back-End deployment."
+        fi
 
   # 4. Build and deploy FE (front-end)
   - name: "gcr.io/cloud-builders/docker"
     id: "Build FE Docker image"
-    if: "substitute('$(cat /workspace/build_frontend)', 'true', 'true', 'false', 'false') == 'true'"
+    entrypoint: "bash"
     args:
-      - "build"
-      - "-t"
-      - "europe-west1-docker.pkg.dev/test-sere/test-repo/hello-frontend:$COMMIT_SHA" # Nominare hello-frontend
-      - "frontend/" # Cartella del front-end
+      - "-c"
+      - |
+        if [[ $(cat /workspace/build_frontend) == "true" ]]; then
+          echo "Building Front-End Docker image..."
+          docker build -t europe-west1-docker.pkg.dev/test-sere/test-repo/hello-frontend:$COMMIT_SHA frontend/
+        else
+          echo "Skipping Front-End build as no changes detected."
+        fi
 
   - name: "gcr.io/cloud-builders/docker"
     id: "Push FE Docker image to Artifact Registry"
-    if: "substitute('$(cat /workspace/build_frontend)', 'true', 'true', 'false', 'false') == 'true'"
+    entrypoint: "bash"
     args:
-      - "push"
-      - "europe-west1-docker.pkg.dev/test-sere/test-repo/hello-frontend:$COMMIT_SHA" # Nominare hello-frontend
+      - "-c"
+      - |
+        if [[ $(cat /workspace/build_frontend) == "true" ]]; then
+          echo "Pushing Front-End Docker image to Artifact Registry..."
+          docker push europe-west1-docker.pkg.dev/test-sere/test-repo/hello-frontend:$COMMIT_SHA
+        else
+          echo "Skipping Front-End image push."
+        fi
 
   - name: "gcr.io/cloud-builders/gcloud"
     id: "Deploy FE to Cloud Run"
-    if: "substitute('$(cat /workspace/build_frontend)', 'true', 'true', 'false', 'false') == 'true'"
+    entrypoint: "bash"
     args:
-      - "run"
-      - "deploy"
-      - "hello-frontend" # Nominare hello-frontend su Cloud Run
-      - "--image"
-      - "europe-west1-docker.pkg.dev/test-sere/test-repo/hello-frontend:$COMMIT_SHA"
-      - "--region"
-      - "europe-west1"
-      - "--platform"
-      - "managed"
-      - "--allow-unauthenticated"
+      - "-c"
+      - |
+        if [[ $(cat /workspace/build_frontend) == "true" ]]; then
+          echo "Deploying Front-End to Cloud Run..."
+          gcloud run deploy hello-frontend --image europe-west1-docker.pkg.dev/test-sere/test-repo/hello-frontend:$COMMIT_SHA --region europe-west1 --platform managed --allow-unauthenticated
+        else
+          echo "Skipping Front-End deployment."
+        fi
 
 images:
   - "europe-west1-docker.pkg.dev/test-sere/test-repo/hello-backend:$COMMIT_SHA"
