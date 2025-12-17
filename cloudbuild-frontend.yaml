@@ -1,0 +1,37 @@
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+steps:
+  - name: "gcr.io/cloud-builders/docker"
+    id: "Build FE Image"
+    args:
+      [
+        "build",
+        "-t",
+        "europe-west1-docker.pkg.dev/test-sere/test-repo/hello-frontend:$SHORT_SHA",
+        "frontend/",
+      ]
+
+  - name: "gcr.io/cloud-builders/docker"
+    id: "Push FE Image"
+    args:
+      [
+        "push",
+        "europe-west1-docker.pkg.dev/test-sere/test-repo/hello-frontend:$SHORT_SHA",
+      ]
+
+  - name: "gcr.io/cloud-builders/gcloud"
+    id: "Deploy FE"
+    args:
+      [
+        "run",
+        "deploy",
+        "hello-frontend",
+        "--image",
+        "europe-west1-docker.pkg.dev/test-sere/test-repo/hello-frontend:$SHORT_SHA",
+        "--region",
+        "europe-west1",
+        "--platform",
+        "managed",
+        "--allow-unauthenticated",
+      ]

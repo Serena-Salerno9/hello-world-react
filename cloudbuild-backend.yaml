@@ -1,0 +1,40 @@
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+steps:
+  # Build dell'immagine
+  - name: "gcr.io/cloud-builders/docker"
+    id: "Build BE Image"
+    args:
+      [
+        "build",
+        "-t",
+        "europe-west1-docker.pkg.dev/test-sere/test-repo/hello-backend:$SHORT_SHA",
+        "server/",
+      ]
+
+  # Push dell'immagine
+  - name: "gcr.io/cloud-builders/docker"
+    id: "Push BE Image"
+    args:
+      [
+        "push",
+        "europe-west1-docker.pkg.dev/test-sere/test-repo/hello-backend:$SHORT_SHA",
+      ]
+
+  # Deploy su Cloud Run
+  - name: "gcr.io/cloud-builders/gcloud"
+    id: "Deploy BE"
+    args:
+      [
+        "run",
+        "deploy",
+        "hello-backend",
+        "--image",
+        "europe-west1-docker.pkg.dev/test-sere/test-repo/hello-backend:$SHORT_SHA",
+        "--region",
+        "europe-west1",
+        "--platform",
+        "managed",
+        "--allow-unauthenticated",
+      ]
