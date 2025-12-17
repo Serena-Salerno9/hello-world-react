@@ -22,4 +22,4 @@ app.add_middleware(
 
 @app.get("/hello")
 async def hello():
-    return {"message": "Hello World"}
+    return {"message": "Nuovo messaggio dal backend!"}
