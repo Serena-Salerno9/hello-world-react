@@ -2,27 +2,25 @@ options:
   logging: CLOUD_LOGGING_ONLY
 
 steps:
-  # Build dell'immagine passandogli l'URL del Backend
+  # 1. Build dell'immagine passandogli l'URL del Backend tramite variabile
   - name: "gcr.io/cloud-builders/docker"
     id: "Build FE Image"
     args:
       [
         "build",
         "--build-arg",
-        "VITE_API_URL=https://hello-backend-746457634204.europe-west1.run.app",
+        "VITE_API_URL=$_BACKEND_URL",
         "-t",
-        "europe-west1-docker.pkg.dev/test-sere/test-repo/hello-frontend:$SHORT_SHA",
+        "$_IMAGE_PATH:$SHORT_SHA",
         "frontend/",
       ]
 
+  # 2. Push dell'immagine
   - name: "gcr.io/cloud-builders/docker"
     id: "Push FE Image"
-    args:
-      [
-        "push",
-        "europe-west1-docker.pkg.dev/test-sere/test-repo/hello-frontend:$SHORT_SHA",
-      ]
+    args: ["push", "$_IMAGE_PATH:$SHORT_SHA"]
 
+  # 3. Deploy su Cloud Run
   - name: "gcr.io/cloud-builders/gcloud"
     id: "Deploy FE"
     args:
@@ -31,10 +29,20 @@ steps:
         "deploy",
         "hello-frontend",
         "--image",
-        "europe-west1-docker.pkg.dev/test-sere/test-repo/hello-frontend:$SHORT_SHA",
+        "$_IMAGE_PATH:$SHORT_SHA",
         "--region",
-        "europe-west1",
+        "$_REGION",
         "--platform",
         "managed",
         "--allow-unauthenticated",
       ]
+
+# --- SEZIONE VARIABILI PULITE ---
+substitutions:
+  _GCP_PROJECT_ID: "test-sere"
+  _REPOSITORY: "test-repo"
+  _REGION: "europe-west1"
+  _SERVICE_NAME: "hello-frontend"
+  # Uniamo tutto in un'unica variabile per usarla facilmente negli step
+  _IMAGE_PATH: "$_REGION-docker.pkg.dev/$_GCP_PROJECT_ID/$_REPOSITORY/$_SERVICE_NAME"
+  _BACKEND_URL: "https://hello-backend-746457634204.europe-west1.run.app"

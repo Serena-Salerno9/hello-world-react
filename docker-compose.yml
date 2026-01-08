@@ -1,21 +1,19 @@
 version: '3.8'
+
 services:
   backend:
-    build: .
+    build: ./server        # Indica a Docker di entrare nella cartella server
     image: hello-backend
     ports:
-      - "8000:8000"
+      - "8000:8000"        # Mappa la porta locale 8000 a quella del container
     environment:
       - PYTHONUNBUFFERED=1
+      - PORT=8000          # Comunica al Dockerfile di Python quale porta usare
 
   frontend:
-    image: node:18
-    working_dir: /app
-    volumes:
-      - ./:/app
-      - /app/node_modules
+    build: ./frontend      # Indica a Docker di entrare nella cartella frontend
+    image: hello-frontend
     ports:
-      - "5173:5173"
-    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+      - "8080:8080"        # Usiamo 8080 per essere coerenti con Nginx e Cloud Run
     depends_on:
       - backend

@@ -10,7 +10,7 @@ allowed = os.getenv("ALLOWED_ORIGINS")
 if allowed:
     origins = [o.strip() for o in allowed.split(",") if o.strip()]
 else:
-    origins = ["http://localhost:5173", "http://localhost:5174"]
+    origins = ["http://localhost:5173", "http://localhost:5174", "http://localhost:8080"]
 
 app.add_middleware(
     CORSMiddleware,

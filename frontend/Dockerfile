@@ -32,7 +32,7 @@ RUN rm /etc/nginx/conf.d/default.conf
 
 # Copia la nostra configurazione personalizzata (che ascolta sulla 8080)
 # Il file nginx.conf deve trovarsi nella stessa cartella del Dockerfile
-COPY nginx.conf /etc/nginx/nginx.conf
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # Cloud Run si aspetta che il container ascolti sulla variabile d'ambiente $PORT, 
 # che in Cloud Run è 8080.
