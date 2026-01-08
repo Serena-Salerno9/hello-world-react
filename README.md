@@ -1,32 +1,46 @@
-Hello World React (Vite) + FastAPI
-Progetto Full-Stack moderno con architettura a micro-servizi separati, containerizzato con Docker e pronto per il deploy su Google Cloud Run.
+# 🚀 Hello World React (Vite) + FastAPI
 
-🏗️ Architettura del Progetto
-Il progetto è diviso in due componenti indipendenti:
+Progetto Full-Stack moderno con architettura a micro-servizi separati, completamente containerizzato con Docker e ottimizzato per il deploy su Google Cloud Run.
 
-Frontend: React + Vite servito da Nginx (Porta 8080).
+## 🏗️ Architettura del Progetto
 
-Backend: FastAPI (Python) servito da Uvicorn (Porta 8000).
+Il progetto è diviso in due componenti indipendenti e disaccoppiate:
 
-💻 Sviluppo Locale (Senza Docker)
-Backend (Python)
+Frontend: React + Vite, impacchettato con Nginx (Porta 8080).
+
+Backend: FastAPI (Python), servito da Uvicorn (Porta 8000).
+
+## 💻 Sviluppo Locale (Senza Docker)
+
+### Backend (Python)
+
 Entra nella cartella: cd server
 
-Crea venv: python -m venv venv e attivalo.
+Crea venv: python -m venv venv
 
-Installa: pip install -r requirements.txt
+Attiva venv:
+
+Windows: .\venv\Scripts\activate
+
+Mac/Linux: source venv/bin/activate
+
+Installa dipendenze: pip install -r requirements.txt
 
 Avvia: uvicorn app:app --reload --port 8000
 
-Frontend (React)
+### Frontend (React)
+
 Entra nella cartella: cd frontend
 
-Installa: npm install
+Installa dipendenze: npm install
 
-Avvia: npm run dev L'app sarà disponibile su http://localhost:5173.
+Avvia: npm run dev
 
-🐳 Docker Compose (Test Locale)
-Per avviare l'intera infrastruttura (Frontend + Backend) con un solo comando:
+L'app sarà disponibile su: http://localhost:5173
+
+## 🐳 Docker Compose (Test Locale)
+
+Per avviare l'intera infrastruttura con un solo comando:
 
 Bash
 
@@ -35,17 +49,17 @@ Frontend: http://localhost:8080
 
 Backend: http://localhost:8000
 
-🚀 Deploy su Google Cloud Run
-Il deploy è automatizzato tramite Cloud Build con una pipeline a catena: il build del backend scatena automaticamente quello del frontend per garantire la coerenza.
+## 🚀 Deploy su Google Cloud Run
 
-1. Pipeline Backend (cloudbuild-backend.yaml)
-   Esegue il build dell'immagine Python, la pusha su Artifact Registry e aggiorna il servizio hello-backend. Alla fine, lancia il trigger fe-trigger.
+Il deploy è automatizzato tramite Cloud Build con una pipeline a catena:
 
-2. Pipeline Frontend (cloudbuild-frontend.yaml)
-   Esegue il build di React iniettando l'URL del backend tramite --build-arg VITE_API_URL. L'immagine finale usa Nginx per servire i file statici sulla porta 8080.
+Pipeline Backend (cloudbuild-backend.yaml): Esegue il build dell'immagine Python, la pusha su Artifact Registry e aggiorna il servizio hello-backend. Al termine, invoca automaticamente il trigger fe-trigger.
 
-Variabili di Sostituzione (Substitutions)
-Entrambi i file YAML usano variabili pulite per facilitare la manutenzione:
+Pipeline Frontend (cloudbuild-frontend.yaml): Esegue il build di React iniettando l'URL del backend tramite --build-arg VITE_API_URL. L'immagine finale usa Nginx per servire i file statici.
+
+### Variabili di Sostituzione (Substitutions)
+
+I file YAML utilizzano le seguenti variabili per la massima flessibilità:
 
 \_GCP_PROJECT_ID: ID del progetto Google Cloud.
 
@@ -55,9 +69,10 @@ Entrambi i file YAML usano variabili pulite per facilitare la manutenzione:
 
 \_BACKEND_URL: (Solo FE) L'URL pubblico del backend Cloud Run.
 
-🛠️ Note Tecniche Importanti
-CORS: Il backend in app.py è configurato per accettare richieste da localhost (sviluppo) e dal dominio reale del frontend (tramite la variabile ALLOWED_ORIGINS).
+## 🛠️ Note Tecniche Importanti
 
-Iniezione URL: L'URL del backend deve essere fornito al frontend durante la fase di build di Docker, altrimenti React non saprà a chi inviare le richieste una volta online.
+CORS: Il backend in app.py accetta richieste da localhost e dal dominio reale del frontend tramite la variabile ALLOWED_ORIGINS.
 
-Pulizia: I file **pycache**, node_modules e dist sono esclusi tramite file .dockerignore dedicati in ogni sottocartella.
+Iniezione URL: L'URL del backend viene iniettato nel frontend al build-time. Senza questa variabile, le chiamate API falliranno in produzione.
+
+Pulizia: Cartelle come **pycache**, node_modules e dist sono ignorate tramite file .dockerignore per garantire immagini leggere e sicure.

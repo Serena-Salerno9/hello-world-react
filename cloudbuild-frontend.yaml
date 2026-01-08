@@ -11,14 +11,18 @@ steps:
         "--build-arg",
         "VITE_API_URL=$_BACKEND_URL",
         "-t",
-        "$_IMAGE_PATH:$SHORT_SHA",
+        "$_REGION-docker.pkg.dev/$_GCP_PROJECT_ID/$_REPOSITORY/$_SERVICE_NAME:$SHORT_SHA",
         "frontend/",
       ]
 
   # 2. Push dell'immagine
   - name: "gcr.io/cloud-builders/docker"
     id: "Push FE Image"
-    args: ["push", "$_IMAGE_PATH:$SHORT_SHA"]
+    args:
+      [
+        "push",
+        "$_REGION-docker.pkg.dev/$_GCP_PROJECT_ID/$_REPOSITORY/$_SERVICE_NAME:$SHORT_SHA",
+      ]
 
   # 3. Deploy su Cloud Run
   - name: "gcr.io/cloud-builders/gcloud"
@@ -29,7 +33,7 @@ steps:
         "deploy",
         "hello-frontend",
         "--image",
-        "$_IMAGE_PATH:$SHORT_SHA",
+        "$_REGION-docker.pkg.dev/$_GCP_PROJECT_ID/$_REPOSITORY/$_SERVICE_NAME:$SHORT_SHA",
         "--region",
         "$_REGION",
         "--platform",
@@ -37,12 +41,10 @@ steps:
         "--allow-unauthenticated",
       ]
 
-# --- SEZIONE VARIABILI PULITE ---
+# --- SEZIONE VARIABILI PULITE (Senza nidificazione) ---
 substitutions:
   _GCP_PROJECT_ID: "test-sere"
   _REPOSITORY: "test-repo"
   _REGION: "europe-west1"
   _SERVICE_NAME: "hello-frontend"
-  # Uniamo tutto in un'unica variabile per usarla facilmente negli step
-  _IMAGE_PATH: "$_REGION-docker.pkg.dev/$_GCP_PROJECT_ID/$_REPOSITORY/$_SERVICE_NAME"
   _BACKEND_URL: "https://hello-backend-746457634204.europe-west1.run.app"

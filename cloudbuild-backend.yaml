@@ -2,15 +2,25 @@ options:
   logging: CLOUD_LOGGING_ONLY
 
 steps:
-  # 1. Build dell'immagine usando la variabile composta
+  # 1. Build dell'immagine - Componiamo l'URL qui negli args
   - name: "gcr.io/cloud-builders/docker"
     id: "Build BE Image"
-    args: ["build", "-t", "$_IMAGE_PATH:$SHORT_SHA", "server/"]
+    args:
+      [
+        "build",
+        "-t",
+        "$_REGION-docker.pkg.dev/$_GCP_PROJECT_ID/$_REPOSITORY/$_SERVICE_NAME:$SHORT_SHA",
+        "server/",
+      ]
 
   # 2. Push dell'immagine
   - name: "gcr.io/cloud-builders/docker"
     id: "Push BE Image"
-    args: ["push", "$_IMAGE_PATH:$SHORT_SHA"]
+    args:
+      [
+        "push",
+        "$_REGION-docker.pkg.dev/$_GCP_PROJECT_ID/$_REPOSITORY/$_SERVICE_NAME:$SHORT_SHA",
+      ]
 
   # 3. Deploy su Cloud Run
   - name: "gcr.io/cloud-builders/gcloud"
@@ -21,7 +31,7 @@ steps:
         "deploy",
         "hello-backend",
         "--image",
-        "$_IMAGE_PATH:$SHORT_SHA",
+        "$_REGION-docker.pkg.dev/$_GCP_PROJECT_ID/$_REPOSITORY/$_SERVICE_NAME:$SHORT_SHA",
         "--region",
         "$_REGION",
         "--platform",
@@ -42,11 +52,9 @@ steps:
         "--branch=$BRANCH_NAME",
       ]
 
-# --- PULIZIA VARIABILI ---
+# --- PULIZIA VARIABILI (Senza variabili nidificate) ---
 substitutions:
   _GCP_PROJECT_ID: "test-sere"
   _REPOSITORY: "test-repo"
   _REGION: "europe-west1"
   _SERVICE_NAME: "hello-backend"
-  # Composizione automatica dell'indirizzo
-  _IMAGE_PATH: "$_REGION-docker.pkg.dev/$_GCP_PROJECT_ID/$_REPOSITORY/$_SERVICE_NAME"
